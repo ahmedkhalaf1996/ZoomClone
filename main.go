@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/ahmedkhalaf1996/ZoomClone/pkg"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
@@ -30,8 +32,8 @@ func main() {
 		c.HTML(http.StatusOK, "room.html", gin.H{"roomId": roomId})
 	})
 
-	hub := newHub()
-	go hub.run()
+	hub := pkg.NewHub()
+	go hub.Run()
 
 	router.GET("/ws/:room", func(c *gin.Context) {
 		roomId := c.Param("room")
@@ -41,7 +43,7 @@ func main() {
 	router.Run(":3000")
 }
 
-func handleWebSocket(hub *Hub, w http.ResponseWriter, r *http.Request, roomId string) {
+func handleWebSocket(hub *pkg.Hub, w http.ResponseWriter, r *http.Request, roomId string) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		fmt.Println(err)
@@ -51,18 +53,18 @@ func handleWebSocket(hub *Hub, w http.ResponseWriter, r *http.Request, roomId st
 
 	clientId := generateUUID()
 
-	client := &Client{
-		conn:     conn,
-		clientId: clientId,
-		roomId:   roomId,
-		send:     make(chan []byte),
-		hub:      hub,
+	client := &pkg.Client{
+		Conn:     conn,
+		ClientId: clientId,
+		RoomId:   roomId,
+		Send:     make(chan []byte),
+		Hub:      hub,
 	}
 
-	hub.register <- client
+	hub.Register <- client
 
-	go client.writePump()
-	client.readPump()
+	go client.WritePump()
+	client.ReadPump()
 }
 
 func generateUUID() string {
